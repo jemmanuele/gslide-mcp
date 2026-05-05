@@ -25,6 +25,13 @@ from ..auth import slide_service, drive_service
 from ..util import parse_pres_id
 
 
+# Topic / snippet tuning. Centralized here so the heuristic can be adjusted
+# in one place if it ever needs broader thresholds.
+_TOPIC_FONT_PT = 24.0       # min font size for an element to count as "title-like"
+_TOPIC_MAX_CHARS = 80
+_SNIPPET_MAX_CHARS = 200
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers (local, independent of deck.py private helpers)
 # ---------------------------------------------------------------------------
@@ -58,10 +65,16 @@ def _font_size_pt(style: dict) -> float:
     return float(magnitude)
 
 
-def _largest_text_element(elements: list, min_pt: float = 24.0) -> str:
+def _largest_text_element(elements: list, min_pt: float = _TOPIC_FONT_PT) -> str:
     """Return the text of the largest text element whose font size >= min_pt.
 
     Walks top-level and grouped elements. Returns '' if none qualify.
+
+    Limitation: elements that inherit font size from a layout or theme have no
+    explicit ``fontSize`` in the API response and are treated as 0pt — they
+    will not qualify under any ``min_pt > 0`` threshold. This affects
+    placeholder titles on theme-styled slides; ``_infer_topic`` falls through
+    to the next priority level in those cases.
     """
     best_pt = 0.0
     best_text = ""
@@ -106,17 +119,17 @@ def _infer_topic(slide: dict) -> str:
     for el in elements:
         alt = (el.get("title") or el.get("description") or "").strip()
         if alt:
-            return alt[:80]
+            return alt[:_TOPIC_MAX_CHARS]
 
-    # Priority 2: largest text element >= 24pt
-    large = _largest_text_element(elements, min_pt=24.0).strip()
+    # Priority 2: largest text element above the title-size threshold
+    large = _largest_text_element(elements, min_pt=_TOPIC_FONT_PT).strip()
     if large:
-        return large[:80]
+        return large[:_TOPIC_MAX_CHARS]
 
     # Priority 3: first text run
     runs = _collect_text_runs(elements)
     if runs:
-        return runs[0][:80]
+        return runs[0][:_TOPIC_MAX_CHARS]
 
     return ""
 
@@ -129,7 +142,7 @@ def _summarize_slide(slide: dict, index: int) -> dict:
     has_image = any("image" in el for el in elements)
 
     runs = _collect_text_runs(elements)
-    text_snippet = " ".join(runs)[:200]
+    text_snippet = " ".join(runs)[:_SNIPPET_MAX_CHARS]
 
     topic = _infer_topic(slide)
 
@@ -222,7 +235,8 @@ def build_template_library(
     Args:
         decks: list of deck IDs or URLs to ingest.
         output_path: optional file path to write the registry JSON (indent=2).
-            Parent directory must exist. If omitted, no file is written.
+            Parent directory must exist. **Existing files are overwritten.**
+            If omitted, no file is written.
 
     Returns:
         {
@@ -323,12 +337,13 @@ def assemble_from_template(
     new_id: str = new_pres["presentationId"]
 
     # --- 2. Optionally move to parent folder ---
+    from googleapiclient.errors import HttpError
+
     folder_move: str
     if parent_folder_id is None:
         folder_move = "skipped"
     else:
         try:
-            # Remove from current parents, add to target folder
             existing = drive_service().files().get(
                 fileId=new_id, fields="parents", supportsAllDrives=True
             ).execute()
@@ -341,19 +356,27 @@ def assemble_from_template(
                 fields="id,parents",
             ).execute()
             folder_move = "ok"
-        except Exception as exc:
-            folder_move = f"failed: {exc}"
+        except HttpError as exc:
+            folder_move = f"failed: HTTP {exc.resp.status} {exc.reason}"
 
     # --- 3. Copy each picked slide ---
     copied: list[dict] = []
     copied_ids: set[str] = set()
 
-    for pick in picks:
-        result = _cross_deck.copy_slide_cross_deck(
-            src_presentation=pick["deck"],
-            src_slide=pick["slide"],
-            dst_presentation=new_id,
-        )
+    for i, pick in enumerate(picks):
+        try:
+            result = _cross_deck.copy_slide_cross_deck(
+                src_presentation=pick["deck"],
+                src_slide=pick["slide"],
+                dst_presentation=new_id,
+            )
+        except Exception as exc:
+            # Surface the orphan deck ID so the caller can clean up or retry.
+            raise RuntimeError(
+                f"copy failed at picks[{i}] ({pick!r}); partial deck at "
+                f"https://docs.google.com/presentation/d/{new_id}/edit "
+                f"has {len(copied)} slide(s) so far: {exc}"
+            ) from exc
         new_slide_id = result.get("newSlideId", "")
         dst_index = result.get("dstIndex")
         if new_slide_id:
