@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gslide-mcp"
+version = "0.1.0"
+description = "Google Slides MCP server — fast, typed tools for deck construction on top of gslides-api"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Jan Emmanuele"}]
+requires-python = ">=3.10"
+keywords = ["mcp", "google-slides", "presentations", "claude", "anthropic"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "mcp>=1.0",
+    "gslides-api>=0.3.6",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-oauthlib",
+    "pydantic>=2",
+    "Pillow>=10",
+    "certifi",
+]
+
+[project.urls]
+Homepage = "https://github.com/jan-emmanuele/gslide-mcp"
+Repository = "https://github.com/jan-emmanuele/gslide-mcp"
+Issues = "https://github.com/jan-emmanuele/gslide-mcp/issues"
+
+[project.scripts]
+gslides-mcp = "gslides_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gslides_mcp"]
