@@ -178,8 +178,8 @@ Open the URL from the response, or use `screenshot_range` to capture all four sl
 ```python
 screenshot_range(
     presentation="1ZnewDECKidABCDEFGHIJKLMNOPQRSTUVWXYZ12345678",
-    start=1,
-    end=4
+    slides=["1", "2", "3", "4"],
+    size="MEDIUM",
 )
 ```
 
