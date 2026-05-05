@@ -7,6 +7,7 @@ for every client logo.
 
 from __future__ import annotations
 
+import json
 import os
 import ssl
 import urllib.parse
@@ -142,7 +143,6 @@ def _wikipedia_logo_url(host: str) -> str | None:
     )
     try:
         with _open(api, timeout=5) as resp:
-            import json
             data = json.loads(resp.read().decode("utf-8"))
         pages = data.get("query", {}).get("pages", {})
         for _pid, page in pages.items():

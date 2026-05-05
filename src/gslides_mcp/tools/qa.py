@@ -6,7 +6,6 @@ slide directly — eliminates the curl + Read PNG dance.
 
 from __future__ import annotations
 
-import base64
 import os
 import subprocess
 import tempfile

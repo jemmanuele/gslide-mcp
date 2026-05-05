@@ -95,6 +95,8 @@ function _resolveSlide_(presentation, ref) {
 }
 
 function _json(payload, status) {
+  // Note: ContentService has no HTTP-status API; the `status` param is accepted
+  // for caller intent but ignored. Errors are conveyed via the JSON body.
   var out = ContentService.createTextOutput(JSON.stringify(payload));
   out.setMimeType(ContentService.MimeType.JSON);
   return out;

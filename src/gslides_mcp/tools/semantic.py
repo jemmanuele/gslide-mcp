@@ -1,4 +1,4 @@
-"""Semantic-layer tools — first-leap operations that compose primitives.
+"""Semantic-layer tools — high-level operations that compose primitives.
 
 Where the rest of the MCP exposes Slides API mechanics (shapes, text, geometry),
 this module exposes operations that collapse common multi-step sequences into a
@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import ssl
 import urllib.request
-from typing import Any
 
 import certifi
 
@@ -63,7 +62,7 @@ def swap_client(
            the same batchUpdate.
         3. If ``new_logo_url`` is provided, find the old client's logo on the
            cover (and any ``logo_slides`` you list), delete it, insert the
-           new logo at the same geometry. Only acts on the FIRST image
+           new logo at the same geometry. Picks the smallest-area image
            element on each target slide whose width/height match a
            "logo-shaped" footprint (small, near a corner) — the cover hero
            image and section-divider photography are left alone.
@@ -213,7 +212,7 @@ def _element_geometry_pt(el: dict) -> dict:
 def _find_logo_element(slide: dict) -> dict | None:
     """Pick the most likely client-logo image on a slide.
 
-    Heuristic: smallest image whose width is < 200pt and whose top-left is in
+    Heuristic: smallest image at most 250pt wide and 80pt tall whose top-left is in
     the bottom-left quadrant of the slide — a common wordmark placement on
     cover/closing slides. Falls back to "smallest image overall" if no
     quadrant match.

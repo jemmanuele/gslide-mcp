@@ -11,9 +11,6 @@ deployment steps. The MCP reads the deployed URL from either:
     - file ``~/.gslides-mcp/appscript_url`` (one-line text)
 
 If neither is set, the tool raises with deployment instructions.
-
-This module replaces the v0.1 stub at ``copy_slide_cross_deck`` in v0.2 —
-the old stub returned a no-op; this one round-trips through Apps Script.
 """
 
 from __future__ import annotations
@@ -28,7 +25,6 @@ from pathlib import Path
 import certifi
 
 from ..app import mcp
-from ..auth import client
 from ..util import parse_pres_id
 
 
