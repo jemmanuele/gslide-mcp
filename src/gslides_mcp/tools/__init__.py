@@ -4,4 +4,4 @@ Importing this package imports all submodules, which is when @mcp.tool() decorat
 fire and register tool handlers.
 """
 
-from . import assets, content, cross_deck, deck, layout, qa, semantic, shapes, slides  # noqa: F401
+from . import assets, content, cross_deck, deck, layout, library, qa, semantic, shapes, slides  # noqa: F401
