@@ -80,7 +80,7 @@ python -m gslides_mcp.server
 | | `duplicate_slide` | Duplicate a slide within the same deck |
 | | `move_slide` | Reorder a slide |
 | | `delete_slides` | Delete one or more slides |
-| | `set_background` | Set the slide background color or image |
+| | `set_background` | Set the slide background color (solid hex) |
 | **Shape** | `create_shape` | Insert a shape |
 | | `insert_image` | Insert an image by URL |
 | | `set_fill` | Set the fill color of a shape |
@@ -90,7 +90,7 @@ python -m gslides_mcp.server
 | | `set_text` | Set plain text on a shape |
 | | `style_text` | Apply text styles (font, size, color) to a range |
 | | `replace_text` | Find-and-replace text across a slide or deck |
-| **Layout** | `transform_element` | Move, resize, or rotate an element |
+| **Layout** | `transform_element` | Move an element (absolute or relative pt) |
 | | `zorder` | Change element stacking order |
 | | `duplicate_element` | Duplicate an element within a slide |
 | | `delete_elements` | Delete one or more elements |

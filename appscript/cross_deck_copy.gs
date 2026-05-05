@@ -73,7 +73,7 @@ function copySlide_(req) {
 
   // Apps Script auto-saves at script exit — no saveAndClose() + openById()
   // round-trip needed. Earlier versions did that and burned ~10-20s per
-  // call; dropped in v0.4 after timeout regressions in apply_proposal_shape.
+  // call; dropped after timeout regressions in high-slide-count workflows.
   return {newSlideId: newSlide.getObjectId(), dstIndex: newIndex};
 }
 

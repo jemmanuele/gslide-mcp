@@ -19,8 +19,8 @@ def transform_element(
     """Move an element. Either absolute (x_pt, y_pt) or relative (dx_pt, dy_pt).
 
     Preserves the element's existing scaleX/scaleY (critical — naive
-    `applyMode: ABSOLUTE` with `scale: 1` silently blows up elements that had
-    custom scales, see docs/ §8 #10).
+    `applyMode: ABSOLUTE` with `scale: 1` silently resizes elements that had
+    custom scales applied at create time).
     """
     pid = parse_pres_id(presentation)
     svc = slide_service()

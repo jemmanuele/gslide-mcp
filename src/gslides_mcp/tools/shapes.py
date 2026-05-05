@@ -1,7 +1,8 @@
 """Shape-level tools: create_shape, insert_image, set_fill, set_outline.
 
-Encodes the ROUND_RECTANGLE subtle-radius trick (small base + scale transform)
-as a flag — see docs/shape-quirks.md for the why.
+Encodes the ROUND_RECTANGLE subtle-radius trick (declare the shape at a small
+base size and scale up via the transform — corner radius stays proportional to
+the base, giving a subtle ~5px visual instead of the aggressive default).
 """
 
 from __future__ import annotations
