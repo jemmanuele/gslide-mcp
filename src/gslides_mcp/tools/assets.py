@@ -97,7 +97,7 @@ def fetch_logo_by_domain(domain: str, prefer: str = "wordmark") -> dict:
 
     # logo.dev is only attempted if GSLIDES_MCP_LOGODEV_TOKEN is set
     logodev_token = os.environ.get("GSLIDES_MCP_LOGODEV_TOKEN")
-    logodev = (f"https://img.logo.dev/{host}?token={logodev_token}", "logodev") if logodev_token else None
+    logodev = ("logodev", f"https://img.logo.dev/{host}?token={logodev_token}") if logodev_token else None
 
     if prefer == "icon":
         attempts = [
