@@ -89,7 +89,11 @@ def _load_or_refresh_creds(cred_directory: Path):
             creds = google.oauth2.credentials.Credentials.from_authorized_user_file(
                 str(token_path), SCOPES
             )
-        except Exception:
+        except Exception as exc:
+            print(
+                f"gslides-mcp: could not parse {token_path} ({exc}); re-authenticating.",
+                file=sys.stderr,
+            )
             creds = None
 
     # --- Refresh if expired ---
@@ -101,6 +105,15 @@ def _load_or_refresh_creds(cred_directory: Path):
             print("gslides-mcp: OAuth token refreshed.", file=sys.stderr)
         except Exception:
             creds = None  # fall through to full re-auth
+
+    # --- Validate scopes — a token issued for a narrower scope set will
+    # refresh successfully but fail at API call time. Force re-auth instead.
+    if creds is not None and not all(s in (creds.scopes or []) for s in SCOPES):
+        print(
+            "gslides-mcp: token scopes do not cover required scopes; re-authenticating.",
+            file=sys.stderr,
+        )
+        creds = None
 
     # --- Still not valid — run the full flow ---
     if creds is None or not creds.valid:
