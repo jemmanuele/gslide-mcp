@@ -1,20 +1,50 @@
 """QA tools: screenshot (returns inline image to Claude), overlap_check.
 
 screenshot returns an MCP `Image` content type so Claude sees the rendered
-slide directly — eliminates the curl + Read PNG dance.
+slide directly — eliminates the manual download + Read PNG dance.
 """
 
 from __future__ import annotations
 
 import os
-import subprocess
+import ssl
 import tempfile
+import urllib.request
 
+import certifi
 from mcp.server.fastmcp import Image
 
 from ..app import mcp
 from ..auth import slide_service
 from ..util import parse_pres_id, resolve_slide_ids, EMU_TO_PT
+
+
+_SSL_CTX = ssl.create_default_context(cafile=certifi.where())
+
+
+def _download_to(url: str, dst: str, timeout: float = 30.0) -> None:
+    """Fetch ``url`` and write the response body to ``dst``.
+
+    Uses the certifi CA bundle to sidestep macOS framework Python's missing
+    system certs (the original reason this code shelled out to ``curl``).
+    Cleans up the destination file if the download fails partway.
+    """
+    req = urllib.request.Request(url, headers={"User-Agent": "gslides-mcp/0.1"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX) as resp, \
+                open(dst, "wb") as fh:
+            while True:
+                chunk = resp.read(64 * 1024)
+                if not chunk:
+                    break
+                fh.write(chunk)
+    except Exception:
+        # Don't leave half-written PNGs lying in /tmp
+        try:
+            os.unlink(dst)
+        except OSError:
+            pass
+        raise
 
 
 def _render_thumbnail(svc, pid: str, slide_object_id: str, size: str) -> Image:
@@ -26,8 +56,7 @@ def _render_thumbnail(svc, pid: str, slide_object_id: str, size: str) -> Image:
     ).execute()
     fd, path = tempfile.mkstemp(suffix=".png", prefix="gslides_thumb_")
     os.close(fd)
-    # Use curl to dodge macOS Python SSL cert issues with the contentUrl host.
-    subprocess.run(["curl", "-sL", t["contentUrl"], "-o", path], check=True)
+    _download_to(t["contentUrl"], path)
     return Image(path=path)
 
 
@@ -84,16 +113,26 @@ def screenshot_range(presentation: str, slides: list[str], size: str = "MEDIUM")
     os.close(fd)
 
     pil_thumbs: list[tuple[int, "PILImage.Image"]] = []
-    for sid in sids:
-        thumb_fd, thumb_path = tempfile.mkstemp(suffix=".png", prefix="gslides_thumb_")
-        os.close(thumb_fd)
-        t = svc.presentations().pages().getThumbnail(
-            presentationId=pid,
-            pageObjectId=sid,
-            thumbnailProperties_thumbnailSize=size,
-        ).execute()
-        subprocess.run(["curl", "-sL", t["contentUrl"], "-o", thumb_path], check=True)
-        pil_thumbs.append((sid_to_idx.get(sid, 0), PILImage.open(thumb_path).convert("RGB")))
+    thumb_paths: list[str] = []
+    try:
+        for sid in sids:
+            thumb_fd, thumb_path = tempfile.mkstemp(suffix=".png", prefix="gslides_thumb_")
+            os.close(thumb_fd)
+            thumb_paths.append(thumb_path)
+            t = svc.presentations().pages().getThumbnail(
+                presentationId=pid,
+                pageObjectId=sid,
+                thumbnailProperties_thumbnailSize=size,
+            ).execute()
+            _download_to(t["contentUrl"], thumb_path)
+            pil_thumbs.append((sid_to_idx.get(sid, 0), PILImage.open(thumb_path).convert("RGB")))
+    except Exception:
+        for p in thumb_paths:
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+        raise
 
     # Vertical strip: width = max thumb width, height = sum + gaps + label bands
     label_h = 24
@@ -118,6 +157,17 @@ def screenshot_range(presentation: str, slides: list[str], size: str = "MEDIUM")
         y += im.height + gap
 
     strip.save(strip_path, "PNG", optimize=True)
+
+    # Per-thumb PNGs are now composited into the strip; drop them so /tmp
+    # doesn't fill up over a long-running server.
+    for _, im in pil_thumbs:
+        im.close()
+    for p in thumb_paths:
+        try:
+            os.unlink(p)
+        except OSError:
+            pass
+
     return Image(path=strip_path)
 
 

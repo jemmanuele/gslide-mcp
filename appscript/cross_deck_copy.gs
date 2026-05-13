@@ -36,7 +36,10 @@ function doPost(e) {
       return _json({error: "unknown op: " + op}, 400);
     }
   } catch (err) {
-    return _json({error: String(err), stack: err && err.stack}, 500);
+    // Do not reflect err.stack — when this web app is deployed "Anyone",
+    // any caller could probe it with malformed input and harvest script
+    // internals via the response.
+    return _json({error: String(err)}, 500);
   }
 }
 

@@ -87,7 +87,9 @@ def fetch_logo_by_domain(domain: str, prefer: str = "wordmark") -> dict:
     """
     # Normalize input: full URL → host; trailing/leading whitespace; lower
     parsed = urllib.parse.urlparse(domain.strip() if "://" in domain else f"//{domain.strip()}")
-    host = (parsed.hostname or domain.strip()).lower().lstrip("www.")
+    # removeprefix (not lstrip) — lstrip("www.") strips any leading {w,.} char,
+    # which mangles hosts like "w.gov" or "wwwww.foo.com".
+    host = (parsed.hostname or domain.strip()).lower().removeprefix("www.")
     if not host or "." not in host:
         raise ValueError(f"could not extract a domain from {domain!r}")
 

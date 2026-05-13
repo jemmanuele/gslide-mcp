@@ -225,6 +225,7 @@ def summarize_deck(presentation: str) -> dict:
 def build_template_library(
     decks: list[str],
     output_path: str | None = None,
+    overwrite: bool = False,
 ) -> dict:
     """Summarize multiple decks and return a unified template library registry.
 
@@ -235,8 +236,11 @@ def build_template_library(
     Args:
         decks: list of deck IDs or URLs to ingest.
         output_path: optional file path to write the registry JSON (indent=2).
-            Parent directory must exist. **Existing files are overwritten.**
-            If omitted, no file is written.
+            Parent directory must exist. If omitted, no file is written.
+        overwrite: must be True to overwrite an existing file at
+            ``output_path``. Default False — raises FileExistsError if the
+            path already exists. Guards against accidentally clobbering an
+            unrelated file (e.g. a dotfile) via a stray path argument.
 
     Returns:
         {
@@ -246,6 +250,9 @@ def build_template_library(
             "total_slides": M,
             "output_path": "<path>",   # only present when output_path was given
         }
+
+    Raises:
+        FileExistsError: if ``output_path`` already exists and ``overwrite`` is False.
 
     Error handling: if any single deck fails (e.g. you lack read access), the
     exception propagates and no output file is written. Remove that deck from
@@ -261,7 +268,13 @@ def build_template_library(
     }
 
     if output_path is not None:
-        Path(output_path).write_text(json.dumps(result, indent=2))
+        out = Path(output_path)
+        if out.exists() and not overwrite:
+            raise FileExistsError(
+                f"refusing to overwrite existing file {output_path!r} "
+                f"— pass overwrite=True to confirm replacement."
+            )
+        out.write_text(json.dumps(result, indent=2))
         result["output_path"] = output_path
 
     return result

@@ -24,8 +24,20 @@ _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
 
 def _image_url_is_raster(url: str, timeout: float = 4.0) -> tuple[bool, str]:
-    """HEAD the URL, return (ok, content_type). Slides API accepts PNG/JPEG/GIF/BMP
-    but rejects SVG and other vector formats — pre-check before destructive ops."""
+    """Best-effort raster-image check: HEAD/GET the URL and return (ok, content_type).
+
+    The Slides API accepts PNG/JPEG/GIF/BMP but rejects SVG and other vector
+    formats. This pre-check catches the common case (URL serves SVG, or 404s)
+    before we start a destructive delete-then-create flow.
+
+    Caveats:
+        - TOCTOU: the URL Slides actually fetches at ``createImage`` time can
+          differ from what we just saw — a flaky CDN may serve PNG on the
+          probe and HTML/SVG on the real fetch.
+        - HEAD-unfriendly hosts may return inconsistent content-types vs GET.
+
+    Treat the result as a hint, not a guarantee.
+    """
     for method in ("HEAD", "GET"):
         try:
             req = urllib.request.Request(url, method=method, headers={"User-Agent": "gslides-mcp/0.1"})

@@ -20,6 +20,25 @@ from pathlib import Path
 
 from gslides_api.client import GoogleAPIClient
 
+
+def _write_token_atomic(token_path: Path, payload: str) -> None:
+    """Write ``payload`` to ``token_path`` at mode 0o600 atomically.
+
+    Plain ``write_text`` + ``chmod`` leaves a brief window where the file
+    exists at the default umask (typically 0o644). On a shared host that's
+    enough for a co-tenant to read the OAuth token. ``os.open`` with explicit
+    0o600 mode closes that window.
+
+    ``O_CREAT`` only sets the mode when the file is being created, so we
+    also re-chmod in case ``token.json`` already existed at a permissive
+    mode from a previous run.
+    """
+    fd = os.open(str(token_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        fh.write(payload)
+    os.chmod(str(token_path), 0o600)
+
+
 SCOPES = [
     "https://www.googleapis.com/auth/presentations",
     "https://www.googleapis.com/auth/drive",
@@ -67,8 +86,7 @@ def _run_oauth_flow(creds_path: Path, token_path: Path):
     )
     flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), SCOPES)
     creds = flow.run_local_server(port=0)
-    token_path.write_text(creds.to_json())
-    token_path.chmod(0o600)
+    _write_token_atomic(token_path, creds.to_json())
     print(f"gslides-mcp: token saved to {token_path}", file=sys.stderr)
     return creds
 
@@ -100,8 +118,7 @@ def _load_or_refresh_creds(cred_directory: Path):
     if creds is not None and creds.expired and creds.refresh_token:
         try:
             creds.refresh(google.auth.transport.requests.Request())
-            token_path.write_text(creds.to_json())
-            token_path.chmod(0o600)
+            _write_token_atomic(token_path, creds.to_json())
             print("gslides-mcp: OAuth token refreshed.", file=sys.stderr)
         except Exception:
             creds = None  # fall through to full re-auth

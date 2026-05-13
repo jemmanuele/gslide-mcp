@@ -19,6 +19,7 @@ import json
 import os
 import ssl
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -32,6 +33,24 @@ _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
 
 _APPSCRIPT_URL_FILE = Path.home() / ".gslides-mcp" / "appscript_url"
+
+# Apps Script web apps always serve from this host. We refuse to send an OAuth
+# bearer token to anything else, even if the URL file or env var was mis-set.
+_APPSCRIPT_HOST = "script.google.com"
+
+
+# A urllib opener that does NOT follow redirects. Apps Script /exec endpoints
+# respond 200 with a JSON body on success and don't redirect in normal use;
+# allowing redirects would risk replaying the Authorization header across hosts.
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, hdrs, newurl):  # noqa: ARG002
+        return None
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(
+    _NoRedirect(),
+    urllib.request.HTTPSHandler(context=_SSL_CTX),
+)
 
 
 def _appscript_url() -> str:
@@ -50,27 +69,35 @@ def _appscript_url() -> str:
 
 
 def _post_json(url: str, payload: dict, timeout: float = 180.0) -> dict:
-    """POST a JSON payload, return parsed JSON. Bearer-auth with the MCP's OAuth token."""
+    """POST a JSON payload to the Apps Script web app and return parsed JSON.
+
+    Security: the OAuth bearer token is attached ONLY when the destination
+    host is script.google.com. A misconfigured ``GSLIDES_MCP_APPSCRIPT_URL``
+    (typo, hostile takeover of the URL file, swap to a dev tunnel) would
+    otherwise leak a usable Google access token to an arbitrary endpoint.
+    Redirects are also disabled — Apps Script doesn't issue them, and we
+    don't want a same-scheme cross-host redirect to replay the token.
+    """
     body = json.dumps(payload).encode("utf-8")
-    # The Apps Script web app is "Execute as me" + "Anyone access", so the
-    # call doesn't need an Authorization header. We send one anyway as a
-    # softer requirement so deployments using "Anyone with Google account"
-    # work too — Apps Script ignores it for "Anyone".
     headers = {
         "Content-Type": "application/json",
         "User-Agent": "gslides-mcp/0.1",
     }
-    try:
-        token = _maybe_token()
-        if token:
-            headers["Authorization"] = f"Bearer {token}"
-    except Exception:
-        pass
+    host = urllib.parse.urlparse(url).hostname or ""
+    if host == _APPSCRIPT_HOST:
+        try:
+            token = _maybe_token()
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
+        except Exception:
+            pass
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(req, timeout=timeout, context=_SSL_CTX) as resp:
+        with _NO_REDIRECT_OPENER.open(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
+        # Truncate aggressively — Apps Script error bodies can be large and
+        # we don't want any echoed request headers ending up in user output.
         msg = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"appscript HTTP {e.code}: {msg[:500]}") from None
 
