@@ -18,7 +18,7 @@ import certifi
 from ..app import mcp
 
 
-_USER_AGENT = "gslides-mcp/0.1 (+https://github.com/jan-emmanuele/gslide-mcp)"
+_USER_AGENT = "gslides-mcp/0.1 (+https://github.com/jemmanuele/gslide-mcp)"
 _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
 

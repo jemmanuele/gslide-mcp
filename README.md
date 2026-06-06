@@ -15,7 +15,7 @@ Early release. The API surface may shift between minor versions. Contributions w
 Requires Python 3.10 or newer.
 
 ```sh
-git clone https://github.com/jan-emmanuele/gslide-mcp.git
+git clone https://github.com/jemmanuele/gslide-mcp.git
 cd gslide-mcp
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
@@ -164,7 +164,7 @@ gslide-mcp/
 
 ## Contributing
 
-Bug reports and pull requests are welcome at https://github.com/jan-emmanuele/gslide-mcp/issues.
+Bug reports and pull requests are welcome at https://github.com/jemmanuele/gslide-mcp/issues.
 
 ## License
 

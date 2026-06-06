@@ -10,7 +10,7 @@ Assume you have three decks on Google Drive:
 
 | Deck | Purpose | Drive ID |
 |------|---------|----------|
-| Q3 sales pitch | External sales deck, 12 slides | `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2Upms` |
+| Q3 sales pitch | External sales deck, 12 slides | `1Q3salesPITCHexampleDECKidABCDEFGHIJK000001` |
 | Product launch | Launch announcement, 15 slides | `1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999` |
 | Internal all-hands | Company-wide update, 10 slides | `1FjXzN1pqrCdA2bBcCeEfGhHiIjJkKlLmMnNoOpPqQrR` |
 
@@ -21,7 +21,7 @@ Assume you have three decks on Google Drive:
 ```python
 build_template_library(
     decks=[
-        "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2Upms",
+        "1Q3salesPITCHexampleDECKidABCDEFGHIJK000001",
         "1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999",
         "1FjXzN1pqrCdA2bBcCeEfGhHiIjJkKlLmMnNoOpPqQrR",
     ],
@@ -51,7 +51,7 @@ Open `library.json`. A truncated view of the relevant sections:
   "version": 1,
   "decks": [
     {
-      "drive_id": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2Upms",
+      "drive_id": "1Q3salesPITCHexampleDECKidABCDEFGHIJK000001",
       "title": "Q3 sales pitch",
       "slide_count": 12,
       "slides": [
@@ -130,7 +130,7 @@ You want a short external proposal deck: cover, problem statement, roadmap, pric
 
 ```python
 picks = [
-    {"deck": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2Upms", "slide": 1},
+    {"deck": "1Q3salesPITCHexampleDECKidABCDEFGHIJK000001", "slide": 1},
     {"deck": "1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999", "slide": 3},
     {"deck": "1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999", "slide": 9},
     {"deck": "1FjXzN1pqrCdA2bBcCeEfGhHiIjJkKlLmMnNoOpPqQrR", "slide": 6},
@@ -159,7 +159,7 @@ Sample response (after ~5–8 seconds for four slides):
   "url": "https://docs.google.com/presentation/d/1ZnewDECKidABCDEFGHIJKLMNOPQRSTUVWXYZ12345678/edit",
   "title": "Acme Corp Proposal",
   "copied": [
-    {"deck": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2Upms", "slide": 1, "new_slide_id": "gNEW1_0", "dst_index": 0},
+    {"deck": "1Q3salesPITCHexampleDECKidABCDEFGHIJK000001", "slide": 1, "new_slide_id": "gNEW1_0", "dst_index": 0},
     {"deck": "1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999", "slide": 3, "new_slide_id": "gNEW1_1", "dst_index": 1},
     {"deck": "1EiwhyBqO8bNj5ayWwXgkYqJFvYKl5bWRJd4M5XYZ999", "slide": 9, "new_slide_id": "gNEW1_2", "dst_index": 2},
     {"deck": "1FjXzN1pqrCdA2bBcCeEfGhHiIjJkKlLmMnNoOpPqQrR", "slide": 6, "new_slide_id": "gNEW1_3", "dst_index": 3}

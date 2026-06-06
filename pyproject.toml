@@ -32,9 +32,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jan-emmanuele/gslide-mcp"
-Repository = "https://github.com/jan-emmanuele/gslide-mcp"
-Issues = "https://github.com/jan-emmanuele/gslide-mcp/issues"
+Homepage = "https://github.com/jemmanuele/gslide-mcp"
+Repository = "https://github.com/jemmanuele/gslide-mcp"
+Issues = "https://github.com/jemmanuele/gslide-mcp/issues"
 
 [project.scripts]
 gslides-mcp = "gslides_mcp.server:main"
